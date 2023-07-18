@@ -1,0 +1,32 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    compileSdkVersion compile_sdk_version
+
+    defaultConfig {
+        minSdkVersion min_sdk_version
+        targetSdkVersion target_sdk_Version
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/beans.xml'
+    }
+}
+
+dependencies {
+    api fileTree(dir: 'libs', include: ['*.jar'])
+    // repository (http://4thline.org/m2/) 不支持https，gradle无法同步依赖，直接使用jar包
+    implementation 'org.eclipse.jetty:jetty-server:8.1.22.v20160922'
+    implementation 'org.eclipse.jetty:jetty-servlet:8.1.22.v20160922'
+    implementation 'org.eclipse.jetty:jetty-client:8.1.22.v20160922'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation project(':playerCore')
+}
