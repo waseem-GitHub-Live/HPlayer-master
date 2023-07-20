@@ -183,10 +183,8 @@ class PlayerActivity : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks,
                 .build()
             remoteMediaClient?.load(mediaInfo, mediaLoadOptions)?.setResultCallback { mediaLoadResult ->
                 if (mediaLoadResult.status.isSuccess) {
+                    Log.e("CastingError", "Failed to cast: ${mediaLoadResult.status.isSuccess}")
                     Toast.makeText(this, "Casting started", Toast.LENGTH_SHORT).show()
-                } else {
-                    Log.e("CastingError", "Failed to cast: ${mediaLoadResult.status}")
-                    Toast.makeText(this, "Failed to cast", Toast.LENGTH_SHORT).show()
                 }
             }
         }

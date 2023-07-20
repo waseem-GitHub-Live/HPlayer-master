@@ -104,9 +104,8 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    /**
-     * 加载本地视频
-     */
+
+    @OptIn(DelicateCoroutinesApi::class)
     private fun loadLocalVideo() {
         GlobalScope.launch(Dispatchers.Main) {
             val deferred = GlobalScope.async(Dispatchers.IO) {

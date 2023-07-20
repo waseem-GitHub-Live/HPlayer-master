@@ -1,6 +1,7 @@
 package com.hezb.clingupnp.dms
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -8,6 +9,7 @@ import com.hezb.clingupnp.R
 import com.hezb.clingupnp.UpnpDMSService
 import com.hezb.player.android.AndroidPlayer
 import com.hezb.player.core.MediaModel
+import com.hezb.player.ijk.IjkPlayer
 import com.hezb.player.widget.PlayerControllerView
 
 /**
@@ -51,12 +53,15 @@ class TransportPlayerActivity : Activity() {
         super.onNewIntent(intent)
         initPlayer(intent)
     }
+    private fun startDMSService(context: Context) {
+        startService(Intent(context, UpnpDMSService::class.java))
+    }
 
     private fun initPlayer(intent: Intent) {
         val videoPath = intent.getStringExtra("video_path")
         val playUri = Uri.parse(videoPath)
         val mediaModel = MediaModel(playUri)
-        val player = AndroidPlayer()
+        val player = IjkPlayer()
         player.setMediaSource(this, mediaModel)
         UpnpDMSService.setMediaPlayer(player)
         playerControllerView.bindMediaPlayer(player)
