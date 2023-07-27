@@ -9,15 +9,6 @@ import com.hezb.hplayer.R
 import com.hezb.hplayer.databinding.ViewItemVideoListBinding
 import com.hezb.clingupnp.model.MediaInfo
 
-/**
- * Project Name: HPlayer
- * File Name:    VideoListAdapter
- *
- * Description: 视频列表适配器.
- *
- * @author  hezhubo
- * @date    2022年03月03日 00:46
- */
 class VideoListAdapter(private val mediaList: MutableList<MediaInfo>) :
     RecyclerView.Adapter<VideoListAdapter.VideoViewHolder>() {
 
@@ -60,4 +51,5 @@ class VideoListAdapter(private val mediaList: MutableList<MediaInfo>) :
     interface OnItemClickListener {
         fun onItemClick(video: MediaInfo)
     }
+
 }

@@ -28,9 +28,10 @@ import kotlinx.coroutines.*
  * @author  hezhubo
  * @date    2022年03月02日 22:13
  */
-class MainActivity : BaseActivity() {
-    // Provide an implementation for the castContext property
+class MainActivity() : BaseActivity() {
+
     override lateinit var castContext: CastContext
+    override lateinit var videoListAdapter: VideoListAdapter
 
     private val mViewBinding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
@@ -42,22 +43,37 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(mViewBinding.root)
         castContext = CastContext.getSharedInstance(this)
+
+        val videoList = mutableListOf<MediaInfo>()
+
+        videoListAdapter = VideoListAdapter(videoList)
+
+        mViewBinding.rvVideoList.layoutManager = LinearLayoutManager(this)
+        mViewBinding.rvVideoList.adapter = videoListAdapter
         initAllMember()
+
+        videoListAdapter.onItemClickListener = object : VideoListAdapter.OnItemClickListener {
+            override fun onItemClick(video: MediaInfo) {
+                val intent = Intent(this@MainActivity, HttpServerService::class.java)
+                startService(intent)
+                startHttpServerService()
+            }
+        }
     }
+
+
     private fun initAllMember() {
         mViewBinding.dlnaRemoteDevices.setOnClickListener {
             startActivity(Intent(this, ContentBrowseActivity::class.java))
         }
         mViewBinding.ivDmsService.setOnClickListener {
             startService(Intent(this, UpnpDMSService::class.java))
-            ToastUtil.show(this, "DMS服务已启动")
+            ToastUtil.show(this, "DMS service started")
         }
 
         if (checkPermission()) {
             loadLocalVideo()
         }
-
-        startHttpServerService()
     }
 
     override fun onDestroy() {
@@ -99,7 +115,7 @@ class MainActivity : BaseActivity() {
                         }
                     }
                 }
-                Toast.makeText(this, "授权失败！", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Authorization failed！", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -137,8 +153,8 @@ class MainActivity : BaseActivity() {
     }
 
     /**
-     * 启动http服务器服务，用于分享本地文件
-     * 此处为了方便应用启动时同时启动服务器，可在需要投屏本地文件时开启
+     * Start the http server service for sharing local files
+     * Here, in order to facilitate the server to start at the same time when the application starts, it can be turned on when you need to cast local files
      */
     private fun startHttpServerService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

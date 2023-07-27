@@ -6,9 +6,23 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.net.wifi.WifiManager
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.widget.Toast
 import com.hezb.clingupnp.server.NanoHttpServer
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.openssl.PEMKeyPair
+import org.bouncycastle.openssl.PEMParser
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
+import java.io.ByteArrayInputStream
+import java.io.InputStreamReader
+import java.security.KeyStore
+import java.security.Security
+import java.security.cert.Certificate
+import java.security.cert.CertificateFactory
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
 
 /**
  * Project Name: HPlayer
@@ -23,9 +37,9 @@ class HttpServerService : Service() {
 
     companion object {
         const val NOTIFICATION_CHANNEL_ID = "http_server"
-
+        const val SERVER_ADDRESS = "localhost"
         const val SERVER_PORT = 8086
-
+        const val HTTPS_SERVER_PORT = 443
         fun getLocalIpByWifi(context: Context?): String? {
             context?.let {
                 (it.getSystemService(Context.WIFI_SERVICE) as? WifiManager)?.let { wifiManager ->
@@ -43,38 +57,79 @@ class HttpServerService : Service() {
             return null
         }
 
-        /**
-         * 此处简单的使用静态方法返回本地视频共享地址
-         */
-        fun getVideoUrl(context: Context, videoId: String?): String {
+        fun getVideoUrl1(context: Context, videoId: String?): String {
             return getVideoUrl(getLocalIpByWifi(context), videoId)
         }
-
-        fun getVideoUrl(ip: String?, videoId: String?): String {
-            return "http://${ip}:${SERVER_PORT}${NanoHttpServer.SESSION_URI_VIDEO}?id=${videoId}"
+        fun getVideoUrl(videoId: String?, videoId1: String?): String {
+            val serverAddress = SERVER_ADDRESS
+            val serverPort = HTTPS_SERVER_PORT
+            return "https://$serverAddress:$serverPort/video?id=$videoId"
         }
 
         fun getAudioUrl(ip: String?, audioId: String?): String {
-            return "http://${ip}:${SERVER_PORT}${NanoHttpServer.SESSION_URI_AUDIO}?id=${audioId}"
+            return "https://${ip}:${HTTPS_SERVER_PORT}${NanoHttpServer.SESSION_URI_AUDIO}?id=${audioId}"
         }
 
         fun getImageUrl(ip: String?, imageId: String?): String {
-            return "http://${ip}:${SERVER_PORT}${NanoHttpServer.SESSION_URI_IMAGE}?id=${imageId}"
+            return "https://${ip}:${HTTPS_SERVER_PORT}${NanoHttpServer.SESSION_URI_IMAGE}?id=${imageId}"
         }
     }
+    inner class LocalBinder : Binder() {
+        fun getService(): HttpServerService = this@HttpServerService
+    }
+
+    private val binder = LocalBinder()
 
     private var mNanoHttpServer: NanoHttpServer? = null
 
     override fun onBind(intent: Intent?): IBinder? {
-        return null // 通过绑定服务以获取媒体文件共享url
+        return binder // Obtain the media file sharing url by binding the service
     }
 
     override fun onCreate() {
         super.onCreate()
         showForeground()
 
-        mNanoHttpServer = NanoHttpServer(this, SERVER_PORT).also {
-            it.start()
+        if (Security.getProvider("BC") == null) {
+            Security.addProvider(BouncyCastleProvider())
+        }
+
+
+        val privateKeyBytes = resources.openRawResource(R.raw.terafort_com).readBytes()
+        val pemParser = PEMParser(InputStreamReader(ByteArrayInputStream(privateKeyBytes)))
+        val pemObject = pemParser.readObject()
+
+        if (pemObject is PEMKeyPair) {
+            val keyConverter = JcaPEMKeyConverter().setProvider("BC")
+            val keyPair = keyConverter.getKeyPair(pemObject)
+
+            // Load the certificate chain from terafort_com.p7b
+            val certificateBytes = resources.openRawResource(R.raw.terafort_com2).readBytes()
+            val certificateFactory = CertificateFactory.getInstance("X.509")
+            val certificateInputStream = ByteArrayInputStream(certificateBytes)
+            val certificateChain: Collection<Certificate> =
+                certificateFactory.generateCertificates(certificateInputStream)
+
+            // Create a KeyStore and set the private key and certificate chain
+            val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
+            keyStore.load(null)
+            keyStore.setKeyEntry("key", keyPair.private, null, certificateChain.toTypedArray())
+
+            // Initialize the SSLContext with the KeyManagerFactory
+            val keyManagerFactory =
+                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
+            keyManagerFactory.init(keyStore, null)
+            val sslContext = SSLContext.getInstance("TLS")
+            sslContext.init(keyManagerFactory.keyManagers, null, null)
+
+            // Update the NanoHttpServer to use the HTTPS_SERVER_PORT and SERVER_ADDRESS
+
+            mNanoHttpServer = NanoHttpServer(this, HTTPS_SERVER_PORT, sslContext, "localhost").also {
+                it.start()
+            }
+        } else {
+            // Show a Toast if loading the private key fails
+            Toast.makeText(applicationContext, "not working", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -108,7 +163,6 @@ class HttpServerService : Service() {
             .notification
         startForeground(6666, notification)
     }
-
     override fun onDestroy() {
         super.onDestroy()
         stopForeground(true)
@@ -118,5 +172,4 @@ class HttpServerService : Service() {
             it.release()
         }
     }
-
 }

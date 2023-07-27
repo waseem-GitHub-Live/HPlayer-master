@@ -3,6 +3,7 @@ package com.hezb.hplayer.base
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.cast.framework.CastContext
+import com.hezb.hplayer.ui.adapter.VideoListAdapter
 
 /**
  * Project Name: HPlayer
@@ -16,6 +17,7 @@ import com.google.android.gms.cast.framework.CastContext
 abstract class BaseActivity : AppCompatActivity() {
 
 
+    abstract val videoListAdapter: VideoListAdapter
     protected abstract var castContext: CastContext
     private var isRunning: Boolean = false
 

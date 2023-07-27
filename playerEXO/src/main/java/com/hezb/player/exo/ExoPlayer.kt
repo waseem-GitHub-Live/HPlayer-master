@@ -74,7 +74,7 @@ class ExoPlayer : AbstractMediaPlayer() {
     }
 
     override fun setOptions(playerOptions: List<PlayerOption>) {
-        // TODO mediaOptions 的相应处理
+
     }
 
     override fun prepareAsync() {

@@ -2,11 +2,14 @@ package com.hezb.clingupnp.server
 
 import android.content.Context
 import android.provider.MediaStore
+import com.hezb.clingupnp.HttpServerService
+import com.hezb.clingupnp.HttpServerService.Companion.SERVER_PORT
 import com.hezb.clingupnp.model.MediaInfo
 import fi.iki.elonen.NanoHTTPD
 import java.io.File
 import java.io.FileInputStream
 import java.util.regex.Pattern
+import javax.net.ssl.SSLContext
 
 /**
  * Project Name: HPlayer
@@ -17,7 +20,13 @@ import java.util.regex.Pattern
  * @author  hezhubo
  * @date    2022年03月05日 18:16
  */
-class NanoHttpServer(context: Context, port: Int) : NanoHTTPD(port) {
+class NanoHttpServer(
+    context: Context,
+    port: Int,
+    private val sslContext: SSLContext,
+    private val serverAddress: String
+) : NanoHTTPD(port)
+{
 
     companion object {
         const val SESSION_URI_VIDEO = "/video"

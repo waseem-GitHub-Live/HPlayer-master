@@ -61,7 +61,7 @@ class TransportPlayerActivity : Activity() {
         val videoPath = intent.getStringExtra("video_path")
         val playUri = Uri.parse(videoPath)
         val mediaModel = MediaModel(playUri)
-        val player = IjkPlayer()
+        val player = AndroidPlayer()
         player.setMediaSource(this, mediaModel)
         UpnpDMSService.setMediaPlayer(player)
         playerControllerView.bindMediaPlayer(player)
